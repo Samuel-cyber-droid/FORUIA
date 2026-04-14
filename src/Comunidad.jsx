@@ -1,95 +1,122 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+// 1. Importamos las herramientas de tu base de datos y usuario actual
+import { db, auth } from './firebase';
+import { collection, addDoc, query, orderBy, onSnapshot, serverTimestamp } from 'firebase/firestore';
 
 export default function Comunidad() {
-    const hilosForo = [
-        {
-            id: 1,
-            titulo: "¿Alguien tiene ejemplos claros de recursividad en Java?",
-            autor: "Jafet M.",
-            tiempo: "Hace 2 horas",
-            etiqueta: "#Programación",
-            respuestas: 5,
-            likes: 12
-        },
-        {
-            id: 2,
-            titulo: "Duda con el proyecto final de Estructura de Datos (Árboles)",
-            autor: "Jaqueline A.",
-            tiempo: "Hace 4 horas",
-            etiqueta: "#EstructuraDeDatos",
-            respuestas: 14,
-            likes: 8
-        },
-        {
-            id: 3,
-            titulo: "Recomendación de libro para Cálculo Vectorial",
-            autor: "Erick R.",
-            tiempo: "Ayer",
-            etiqueta: "#CalculoVectorial",
-            respuestas: 3,
-            likes: 25
-        }
-    ];
+  const [publicaciones, setPublicaciones] = useState([]);
+  const [titulo, setTitulo] = useState('');
+  const [contenido, setContenido] = useState('');
 
-    return (
-        <div className="max-w-5xl mx-auto">
-            {/* Cabecera del Foro */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
-                <div>
-                    <h2 className="text-3xl font-bold text-white mb-2">Comunidad Académica</h2>
-                    <p className="text-slate-400">Comparte dudas, responde a tus compañeros y construye conocimiento colaborativo.</p>
+  // 2. Este "Efecto" lee la base de datos en tiempo real apenas abres el foro
+  useEffect(() => {
+    // Apuntamos a la colección "foro" ordenando de lo más nuevo a lo más viejo
+    const q = query(collection(db, "foro"), orderBy("fecha", "desc"));
+    
+    // onSnapshot es mágico: actualiza la pantalla al instante si alguien más publica algo
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const posts = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      setPublicaciones(posts);
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  // 3. Función para enviar los datos de tu formulario a Firebase
+  const publicarDuda = async (e) => {
+    e.preventDefault();
+    if (!titulo.trim() || !contenido.trim()) return;
+
+    try {
+      await addDoc(collection(db, "foro"), {
+        titulo: titulo,
+        contenido: contenido,
+        // Usamos los datos reales del usuario que inició sesión
+        autor: auth.currentUser ? auth.currentUser.displayName : "Usuario Anónimo",
+        foto: auth.currentUser ? auth.currentUser.photoURL : "https://api.dicebear.com/7.x/avataaars/svg?seed=Felix",
+        fecha: serverTimestamp(),
+        likes: 0
+      });
+      // Limpiamos los inputs después de publicar
+      setTitulo('');
+      setContenido('');
+    } catch (error) {
+      console.error("Error al publicar:", error);
+      alert("Error al guardar. Asegúrate de haber habilitado Firestore en modo de prueba.");
+    }
+  };
+
+  return (
+    <div className="max-w-4xl mx-auto space-y-6">
+      
+      {/* Caja para crear una nueva publicación */}
+      <div className="bg-[#121214] p-6 rounded-2xl border border-slate-800/60 shadow-xl">
+        <h2 className="text-xl font-bold text-slate-100 mb-4">¿Tienes alguna duda académica?</h2>
+        <form onSubmit={publicarDuda} className="space-y-4">
+          <input 
+            type="text" 
+            placeholder="Título de tu duda (ej. Error en React con Vite)"
+            value={titulo}
+            onChange={(e) => setTitulo(e.target.value)}
+            className="w-full bg-[#18181b] border border-slate-800 rounded-xl py-3 px-4 text-slate-200 focus:outline-none focus:border-purple-500 transition-colors"
+          />
+          <textarea 
+            placeholder="Describe tu problema con más detalle..."
+            value={contenido}
+            onChange={(e) => setContenido(e.target.value)}
+            rows="3"
+            className="w-full bg-[#18181b] border border-slate-800 rounded-xl py-3 px-4 text-slate-200 focus:outline-none focus:border-purple-500 transition-colors resize-none"
+          ></textarea>
+          <div className="flex justify-end">
+            <button 
+              type="submit"
+              className="bg-purple-600 hover:bg-purple-500 text-white px-6 py-2 rounded-xl transition-colors font-medium shadow-lg"
+            >
+              Publicar Duda
+            </button>
+          </div>
+        </form>
+      </div>
+
+      {/* Lista de publicaciones de la comunidad */}
+      <div className="space-y-4">
+        <h3 className="text-lg font-bold text-slate-200 mb-2">Últimas publicaciones</h3>
+        
+        {publicaciones.length === 0 ? (
+          <p className="text-slate-500 text-center py-8">Aún no hay publicaciones. ¡Sé el primero en preguntar algo!</p>
+        ) : (
+          publicaciones.map(post => (
+            <div key={post.id} className="bg-[#121214] p-5 rounded-xl border border-slate-800/60 transition-colors hover:border-purple-500/30">
+              <div className="flex gap-4">
+                <img src={post.foto} alt={post.autor} className="w-10 h-10 rounded-full bg-slate-800" />
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-1">
+                    <h4 className="font-bold text-slate-200">{post.autor}</h4>
+                    <span className="text-xs text-slate-500">
+                      {/* Formateamos la fecha si existe */}
+                      {post.fecha?.toDate().toLocaleDateString('es-MX', { hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                  </div>
+                  <h3 className="text-lg font-bold text-white mb-2">{post.titulo}</h3>
+                  <p className="text-slate-400 text-sm leading-relaxed mb-4">{post.contenido}</p>
+                  
+                  <div className="flex gap-4">
+                    <button className="flex items-center gap-2 text-slate-500 hover:text-purple-400 text-sm transition-colors">
+                      <span>👍</span> {post.likes || 0}
+                    </button>
+                    <button className="flex items-center gap-2 text-slate-500 hover:text-blue-400 text-sm transition-colors">
+                      <span>💬</span> Responder
+                    </button>
+                  </div>
                 </div>
-
-                <button className="bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 px-6 rounded-lg shadow-lg transition-transform transform hover:-translate-y-1 flex items-center justify-center">
-                    <span className="mr-2 text-xl font-normal">+</span> Nueva duda
-                </button>
+              </div>
             </div>
-
-            {/* Filtros */}
-            <div className="flex space-x-3 mb-8 overflow-x-auto pb-2 scrollbar-hide">
-                <button className="bg-slate-700 hover:bg-slate-600 text-white text-sm px-5 py-2 rounded-full font-medium transition-colors">Todas</button>
-                <button className="bg-blue-900/40 text-blue-400 border border-blue-700/50 text-sm px-5 py-2 rounded-full font-medium">#Programación</button>
-                <button className="bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 text-sm px-5 py-2 rounded-full font-medium transition-colors">#EstructuraDeDatos</button>
-                <button className="bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 text-sm px-5 py-2 rounded-full font-medium transition-colors">#CalculoVectorial</button>
-            </div>
-
-            {/* Lista de Hilos */}
-            <div className="space-y-4">
-                {hilosForo.map((hilo) => (
-                    <div key={hilo.id} className="bg-slate-800 p-6 rounded-xl border border-slate-700 hover:border-blue-500 transition-all cursor-pointer group shadow-sm hover:shadow-md">
-                        <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
-                            <div className="flex-1">
-                                <span className="inline-block px-3 py-1 bg-slate-900 text-blue-400 text-xs font-bold rounded-md mb-3 tracking-wide">
-                                    {hilo.etiqueta}
-                                </span>
-                                <h3 className="text-lg font-bold text-slate-100 group-hover:text-blue-400 transition-colors mb-2 leading-snug">
-                                    {hilo.titulo}
-                                </h3>
-                                <div className="text-sm text-slate-400 flex items-center space-x-2">
-                                    <div className="w-6 h-6 bg-slate-700 rounded-full flex items-center justify-center text-xs text-white font-bold">
-                                        {hilo.autor.charAt(0)}
-                                    </div>
-                                    <span>Por <strong className="text-slate-300">{hilo.autor}</strong></span>
-                                    <span className="text-slate-600">•</span>
-                                    <span>{hilo.tiempo}</span>
-                                </div>
-                            </div>
-
-                            <div className="flex items-center space-x-6 border-t md:border-t-0 border-slate-700 pt-3 md:pt-0">
-                                <div className="flex items-center text-slate-400 bg-slate-900/50 px-3 py-1.5 rounded-lg">
-                                    <span className="mr-2 text-lg">💬</span>
-                                    <span className="font-bold text-slate-200">{hilo.respuestas}</span>
-                                    <span className="ml-1 text-xs uppercase tracking-wider hidden sm:inline">respuestas</span>
-                                </div>
-                                <div className="flex items-center text-slate-400 bg-slate-900/50 px-3 py-1.5 rounded-lg">
-                                    <span className="mr-2 text-lg">👍</span>
-                                    <span className="font-bold text-slate-200">{hilo.likes}</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                ))}
-            </div>
-        </div>
-    );
+          ))
+        )}
+      </div>
+    </div>
+  );
 }

@@ -1,16 +1,45 @@
-# React + Vite
+# 🚀 Fouryou.ai - Plataforma Académica Inteligente
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+## 📖 Descripción del Proyecto
+**Fouryou.ai** es un ecosistema educativo inteligente diseñado para transformar la manera en que los estudiantes de Ingeniería en Sistemas y áreas tecnológicas interactúan con el conocimiento. A través de un motor de Inteligencia Artificial integrado directamente en el navegador, la plataforma analiza los intereses, materias en curso y aportaciones del usuario para crear un feed de contenido académico 100% personalizado.
 
-Currently, two official plugins are available:
+El objetivo principal es construir una comunidad colaborativa donde resolver dudas, compartir recursos y conectar con otros estudiantes sea intuitivo, rápido y respaldado por machine learning.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## ✨ Características Principales
+* **🧠 Motor de Recomendación IA:** Utiliza una red neuronal (Brain.js) que aprende en tiempo real del historial de interacciones (Likes, Guardados y Materias seleccionadas) para predecir el porcentaje de "Match" y filtrar el contenido más afín al usuario.
+* **💬 Foro Comunitario Dinámico:** Sistema de preguntas y respuestas en tiempo real con soporte para categorización por etiquetas (#Tags), conteo de interacciones y sub-hilos de comentarios.
+* **📊 Kardex Interactivo:** Interfaz que permite a los alumnos seleccionar su carga académica actual para calibrar automáticamente las sugerencias de la IA.
+* **🔐 Autenticación y Seguridad:** Inicio de sesión seguro gestionado con Google Auth y protección de rutas.
+* **👤 Perfil Personalizado:** Panel de control con biografía editable y estadísticas en tiempo real (dudas publicadas, materias activas, interacciones).
 
-## React Compiler
+## 🛠️ Stack Tecnológico
+* **Frontend:** React 19, Vite, Tailwind CSS v4.
+* **Inteligencia Artificial:** Brain.js (Redes Neuronales FeedForward del lado del cliente).
+* **Backend & Base de Datos:** Firebase (Firestore NoSQL, Authentication).
+* **Control de Versiones:** Git & GitHub.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## ⚙️ Instalación y Uso Local (Para el equipo de desarrollo)
+Para clonar y correr este proyecto en tu entorno local, asegúrate de tener Node.js instalado y sigue estos pasos:
 
-## Expanding the ESLint configuration
+1. **Clona el repositorio:**
+   ```bash
+   git clone [https://github.com/tu-usuario/fouryouai.git](https://github.com/tu-usuario/fouryouai.git)
+   cd fouryouai
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+2. **Instala las dependencias necesarias:**
+    ```bash
+    npm install
+
+3. **Configura las Variables de Entorno:**
+    Crea un archivo llamado `.env` en la raiz del proyecto. Solicita las credenciales de Firebase al administrador del repositorio y agregalas con el siguiente formato:
+    ```bash
+    VITE_FIREBASE_API_KEY="tu_api_key_aqui"
+    VITE_FIREBASE_AUTH_DOMAIN="tu_dominio"
+    VITE_FIREBASE_PROJECT_ID="tu_id"
+    VITE_FIREBASE_STORAGE_BUCKET="tu_bucket"
+    VITE_FIREBASE_MESSAGING_SENDER_ID="tu_sender_id"
+    VITE_FIREBASE_APP_ID="tu_app_id"
+
+4. **Inicia el servidor de desarrollo:**
+    ```bash
+    npm run dev

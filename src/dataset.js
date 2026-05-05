@@ -21,5 +21,11 @@ export const kardexDataset = [
             { id: "m7", nombre: "Inteligencia Artificial", tags: ["#IA", "#MachineLearning", "#Python"] },
             { id: "m8", nombre: "Desarrollo Web", tags: ["#ReactJS", "#HTML", "#CSS", "#JavaScript"] }
         ]
+    },
+    {
+        semestre: 'Octavo Semestre',
+        materias: [
+            { id: "m9", nombre: "Gestion de Proyectos de TI", tags: ["#IA", "#MachineLearning", "#Python"] }
+        ]
     }
 ];

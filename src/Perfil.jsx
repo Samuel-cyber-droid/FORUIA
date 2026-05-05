@@ -1,17 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { auth, db } from './firebase';
-import { doc, getDoc, updateDoc, collection, query, where, getDocs } from 'firebase/firestore';
+import { doc, getDoc, collection, query, where, getDocs, setDoc } from 'firebase/firestore';
 
 export default function Perfil() {
   const usuario = auth.currentUser;
   
-  // Estados para la biografía y la edición
   const [editando, setEditando] = useState(false);
-  // Un texto por defecto ad hoc a tu carrera si el usuario es nuevo
   const [bio, setBio] = useState('Estudiante de Ingeniería en Sistemas Computacionales. Apasionado por la Ciencia de Datos y el desarrollo de software.');
   const [nuevaBio, setNuevaBio] = useState('');
 
-  // Estados para las estadísticas reales
+  const [rol, setRol] = useState('Estudiante');
+  const [nuevoRol, setNuevoRol] = useState('Estudiante');
+  
   const [stats, setStats] = useState({
     dudas: 0,
     materias: 0,
@@ -23,7 +23,6 @@ export default function Perfil() {
       if (!usuario) return;
 
       try {
-        // 1. Obtener datos del usuario (Bio, Materias y Likes)
         const userRef = doc(db, "usuarios", usuario.uid);
         const userSnap = await getDoc(userRef);
         
@@ -33,16 +32,15 @@ export default function Perfil() {
         if (userSnap.exists()) {
           const data = userSnap.data();
           if (data.biografia) setBio(data.biografia);
+          if (data.rol) setRol(data.rol);
           conteoMaterias = data.materias ? data.materias.length : 0;
           conteoLikes = data.historialInteracciones ? data.historialInteracciones.length : 0;
         }
 
-        // 2. Buscar cuántas publicaciones ha hecho este usuario en el Foro
         const q = query(collection(db, "foro"), where("autor", "==", usuario.displayName));
         const querySnapshot = await getDocs(q);
         const conteoDudas = querySnapshot.size;
 
-        // Actualizar la pantalla con los números reales
         setStats({
           dudas: conteoDudas,
           materias: conteoMaterias,
@@ -57,14 +55,21 @@ export default function Perfil() {
     cargarDatosPerfil();
   }, [usuario]);
 
-  // Función para guardar la nueva biografía en Firestore
   const guardarBio = async () => {
     if (!usuario || !nuevaBio.trim()) return;
     
+    // NUEVO: Método de confirmación para el rol de Docente
+    if (nuevoRol === 'Docente' && rol !== 'Docente') {
+      const confirmar = window.confirm("Has seleccionado el rol de DOCENTE. Este rol permite subir materiales oficiales y PDFs. ¿Confirmas que eres profesor de la institución?");
+      if (!confirmar) return; 
+    }
+
     try {
       const userRef = doc(db, "usuarios", usuario.uid);
-      await updateDoc(userRef, { biografia: nuevaBio });
+      // Usamos setDoc con merge para asegurar que se guarde el rol aunque el documento sea nuevo
+      await setDoc(userRef, { biografia: nuevaBio, rol: nuevoRol }, { merge: true });
       setBio(nuevaBio);
+      setRol(nuevoRol);
       setEditando(false);
     } catch (error) {
       console.error("Error al guardar biografía:", error);
@@ -73,13 +78,13 @@ export default function Perfil() {
 
   const iniciarEdicion = () => {
     setNuevaBio(bio);
+    setNuevoRol(rol);
     setEditando(true);
   };
 
   return (
     <div className="max-w-5xl mx-auto space-y-6 pb-12">
       
-      {/* Header del Perfil */}
       <div className="flex flex-col md:flex-row gap-8 items-start relative mb-12">
         <div className="relative">
           <div className="w-40 h-40 bg-slate-800 rounded-3xl flex items-center justify-center shadow-lg overflow-hidden border-4 border-[#09090b]">
@@ -89,8 +94,9 @@ export default function Perfil() {
               className="w-full h-full object-cover" 
             />
           </div>
-          <span className="absolute -bottom-3 left-1/2 -translate-x-1/2 bg-purple-600 text-white text-xs font-bold px-4 py-1 rounded-full border-2 border-[#09090b] shadow-lg">
-            ESTUDIANTE
+          {/* NUEVO: Etiqueta dinámica según el rol */}
+          <span className={`absolute -bottom-3 left-1/2 -translate-x-1/2 text-white text-xs font-bold px-4 py-1 rounded-full border-2 border-[#09090b] shadow-lg ${rol === 'Docente' ? 'bg-blue-600' : 'bg-purple-600'}`}>
+            {rol.toUpperCase()}
           </span>
         </div>
 
@@ -109,15 +115,24 @@ export default function Perfil() {
                 onClick={iniciarEdicion}
                 className="bg-transparent border border-slate-600 text-white hover:bg-slate-800 px-6 py-2 rounded-xl text-sm font-medium transition-colors"
               >
-                Editar Biografía
+                Editar Perfil
               </button>
             )}
           </div>
 
-          {/* Sistema de edición de Biografía */}
           <div className="mt-6 max-w-2xl">
             {editando ? (
               <div className="space-y-3">
+                {/* NUEVO: Selector de Rol */}
+                <select
+                  value={nuevoRol}
+                  onChange={(e) => setNuevoRol(e.target.value)}
+                  className="w-full bg-[#18181b] border border-purple-500 rounded-xl p-3 text-sm text-slate-200 outline-none"
+                >
+                  <option value="Estudiante">Estudiante</option>
+                  <option value="Docente">Docente</option>
+                </select>
+
                 <textarea 
                   value={nuevaBio}
                   onChange={(e) => setNuevaBio(e.target.value)}
